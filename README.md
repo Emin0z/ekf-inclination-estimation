@@ -8,6 +8,8 @@ In dynamic conditions, each sensor has inherent limitations:
 
 To overcome these issues, a sensor fusion approach based on the Extended Kalman Filter (EKF) is implemented.
 
+---
+
 ## EKF Framework
 
 The EKF is a recursive state estimation algorithm designed for nonlinear systems. It estimates the system state by combining:
@@ -18,8 +20,6 @@ The filter operates in two main steps:
 
 ### Prediction Step
 
-The state is propagated using the nonlinear system model:
-
 $$
 \hat{\mathbf{x}}_k = f(\mathbf{x}_{k-1}, \mathbf{u}_k)
 $$
@@ -29,8 +29,6 @@ $$
 $$
 
 ### Correction Step
-
-The prediction is corrected using measurements:
 
 $$
 \mathbf{v}_k = \mathbf{z}_k - h(\mathbf{x}_k)
@@ -48,14 +46,18 @@ $$
 \mathbf{P}_k = (\mathbf{I} - \mathbf{K}_k \mathbf{H}_k)\hat{\mathbf{P}}_k
 $$
 
-The Kalman gain $\mathbf{K}$ determines how much the filter trusts the measurements versus the model. :contentReference[oaicite:0]{index=0}
+The Kalman gain $\mathbf{K}$ determines how much the filter trusts the measurements versus the model.
+
+---
 
 ## Sensor Fusion Strategy
 
-- Gyroscope data is used for short-term state propagation (prediction step)
-- Accelerometer data is used in the correction step to compensate for drift
+- Gyroscope → short-term accurate, but drifting  
+- Accelerometer → noisy, but provides long-term reference (gravity)  
 
-This combination allows the filter to provide a more stable and physically consistent estimate of inclination.
+The EKF combines both to achieve a more stable and physically consistent estimation.
+
+---
 
 ## Noise Modeling
 
@@ -63,50 +65,89 @@ The EKF explicitly accounts for uncertainty in both:
 - System dynamics (process noise $\mathbf{Q}$)
 - Sensor measurements (measurement noise $\mathbf{R}$)
 
-These matrices were estimated using sensor data collected in static conditions, ensuring realistic noise characterization.
+These matrices were estimated using sensor data collected under static conditions.
+
+---
 
 ## Measurement Model
-
-The accelerometer measurement is modeled as the projection of the gravity vector into the body frame:
 
 $$
 \mathbf{z} = \mathbf{R}(\mathbf{q})^T \mathbf{g}
 $$
 
-This assumption is valid only when no significant external acceleration is present.
+This assumes the accelerometer measures only gravity, which is valid under low dynamic motion.
 
+---
 
+## Results
+
+### EKF vs Gyroscope (Roll Comparison)
+
+![Comparison](results/comparison.jpg)
+
+The EKF output shows similar performance to gyro-only estimation under the tested conditions.  
+This is mainly due to limited dynamic excitation and non-optimized noise parameters.
+
+---
+
+### Accelerometer Filtering
+
+![Filtering](results/filter.jpg)
+
+The filtered accelerometer signal reduces high-frequency noise, improving measurement stability.
+
+---
+
+### Bias Estimation
+
+![Bias](results/bias.jpg)
+
+The EKF estimates gyroscope bias as part of the state vector, enabling drift compensation.
+
+---
+
+### Measurement Residual
+
+![Residual](results/residual.jpg)
+
+The residual represents the difference between predicted and measured values, indicating filter consistency.
+
+---
 
 ## Limitations
 
-A key limitation of this approach is:
+- Accelerometer is assumed to measure only gravity  
+- Performance degrades under strong external acceleration  
+- Requires proper tuning of $Q$ and $R$ matrices  
 
-- The accelerometer is assumed to measure only gravity
-- During dynamic motion, it also captures external accelerations
-- This violates the measurement model and can degrade accuracy
+---
 
 ## Implementation Notes
 
 Due to limited datasets, extensive parameter tuning was not performed.
 
-In practice, EKF performance is highly dependent on:
-- Noise covariance matrices ($Q$, $R$)
-- System dynamics
-- Application-specific motion profiles
+EKF performance strongly depends on:
+- Noise covariance tuning  
+- Motion characteristics  
+- Application type (e.g., automotive vs railway)
 
-For example:
-- Automotive systems
-- Railway systems
-
-Each requires dedicated tuning for optimal performance.
+---
 
 ## Conclusion
 
-This project demonstrates a complete EKF-based sensor fusion pipeline for inclination estimation, including:
+This project demonstrates a complete EKF-based sensor fusion pipeline, including:
 
-- Nonlinear system modeling
-- State estimation using quaternion representation
-- Sensor fusion between gyroscope and accelerometer
-- Bias-aware estimation framework
+- Nonlinear system modeling  
+- Quaternion-based state estimation  
+- Sensor fusion (gyro + accelerometer)  
+- Bias estimation  
 
-While further tuning is required for deployment, the implemented framework provides a solid and extensible foundation for real-world applications.
+While further tuning is required, the implementation provides a solid foundation for real-world applications.
+
+---
+
+## Future Work
+
+- Parameter tuning for different motion profiles  
+- Handling dynamic acceleration more robustly  
+- Real-time implementation  
